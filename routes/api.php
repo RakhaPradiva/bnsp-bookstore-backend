@@ -24,7 +24,7 @@ Route::apiResource('/authors', AuthorController::class)->only(['index', 'show'])
 
 Route::middleware(['auth:api'])->group(function () {
 
-    Route::apiResource('/users', UserController::class)->only('show', 'update', 'destroy');
+    Route::apiResource('/users', UserController::class)->only(['show', 'update', 'destroy']);
     Route::get('/transactions/history', [TransactionController::class, 'history']);
     Route::apiResource('/transactions', TransactionController::class)->only(['store', 'show',]);
     Route::apiResource('/carts', CartController::class);
