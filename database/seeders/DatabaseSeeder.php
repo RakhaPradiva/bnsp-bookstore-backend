@@ -21,7 +21,9 @@ class DatabaseSeeder extends Seeder
             BookSeeder::class,
             UserSeeder::class,
             TransactionSeeder::class,
+            PaymentSeeder::class,
             CartSeeder::class,
+            ContactMessageSeeder::class,
         ]);
     }
 }

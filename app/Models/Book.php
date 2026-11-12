@@ -35,6 +35,11 @@ class Book extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    public function details(): HasMany
+    {
+        return $this->hasMany(TransactionDetail::class, 'book_id');
+    }
+
     public function carts(): HasMany
     {
         return $this->hasMany(Cart::class, 'book_id');

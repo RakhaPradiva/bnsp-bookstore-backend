@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('order_number');
             $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('book_id')->constrained('books')->onDelete('cascade');
             $table->decimal('total_amount', 10, 2);
+            $table->enum('order_status', ['pending', 'paid', 'shipped', 'delivered', 'cancelled'])->default('pending');
+            $table->text('shipping_address');
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

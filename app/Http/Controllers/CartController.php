@@ -11,7 +11,10 @@ class CartController extends Controller
 {
     public function index()
     {
-        $carts = Cart::with('user', 'book')->get();
+        $user = auth('api')->user();
+        $carts = Cart::with('user', 'book')
+            ->where('customer_id', $user->id)
+            ->get();
 
         if ($carts->isEmpty()) {
             return response()->json([
@@ -43,6 +46,7 @@ class CartController extends Controller
             ], 422);
         }
 
+        $validated = $validator->validated();
         $user = auth('api')->user();
         if (!$user) {
             return response()->json([
@@ -51,7 +55,7 @@ class CartController extends Controller
             ], 401);
         }
 
-        $book = Book::find($request->book_id);
+        $book = Book::find($validated['book_id']);
 
         if (!$book) {
             return response()->json([
@@ -60,17 +64,34 @@ class CartController extends Controller
             ], 404);
         }
 
-        if ($book->stock < $request->quantity) {
+        $cart = Cart::where('customer_id', $user->id)
+            ->where('book_id', $book->id)
+            ->first();
+        $totalQuantity = ($cart?->quantity ?? 0) + $validated['quantity'];
+
+        if ($book->stock < $totalQuantity) {
             return response()->json([
                 'success' => false,
                 'message' => 'Not enough stock!',
             ], 400);
         }
 
+        if ($cart) {
+            $cart->update([
+                'quantity' => $totalQuantity,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart item quantity updated successfully!',
+                'data' => $cart,
+            ], 200);
+        }
+
         $cart = Cart::create([
             'customer_id' => $user->id,
-            'book_id' => $request->book_id,
-            'quantity' => $request->quantity,
+            'book_id' => $validated['book_id'],
+            'quantity' => $validated['quantity'],
         ]);
 
         return response()->json([
@@ -82,7 +103,10 @@ class CartController extends Controller
 
     public function show(string $id)
     {
-        $cart = Cart::with('user', 'book')->find($id);
+        $user = auth('api')->user();
+        $cart = Cart::with('user', 'book')
+            ->where('customer_id', $user->id)
+            ->find($id);
 
         if (!$cart) {
             return response()->json([
@@ -100,7 +124,8 @@ class CartController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $cart = Cart::find($id);
+        $user = auth('api')->user();
+        $cart = Cart::where('customer_id', $user->id)->find($id);
 
         if (!$cart) {
             return response()->json([
@@ -130,20 +155,17 @@ class CartController extends Controller
             ], 404);
         }
 
-        $quantityDifference = $request->quantity - $cart->quantity;
+        $quantity = $validator->validated()['quantity'];
 
-        if ($book->stock < $quantityDifference) {
+        if ($book->stock < $quantity) {
             return response()->json([
                 'success' => false,
                 'message' => 'Not enough stock!',
             ], 400);
         }
 
-        $book->stock -= $quantityDifference;
-        $book->save();
-
         $cart->update([
-            'quantity' => $request->quantity,
+            'quantity' => $quantity,
         ]);
 
         return response()->json([
@@ -155,7 +177,8 @@ class CartController extends Controller
 
     public function destroy(string $id)
     {
-        $cart = Cart::find($id);
+        $user = auth('api')->user();
+        $cart = Cart::where('customer_id', $user->id)->find($id);
 
         if (!$cart) {
             return response()->json([

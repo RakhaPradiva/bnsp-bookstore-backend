@@ -4,7 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -18,23 +20,40 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api');
 
+Route::get('/books/search', [BookController::class, 'search']);
 Route::apiResource('/books', BookController::class)->only(['index', 'show']);
 Route::apiResource('/genres', GenreController::class)->only(['index', 'show']);
 Route::apiResource('/authors', AuthorController::class)->only(['index', 'show']);
+Route::apiResource('contacts', ContactMessageController::class)->only(['store']);
 
 Route::middleware(['auth:api'])->group(function () {
 
     Route::apiResource('/users', UserController::class)->only(['show', 'update', 'destroy']);
+
     Route::get('/transactions/history', [TransactionController::class, 'history']);
-    Route::apiResource('/transactions', TransactionController::class)->only(['store', 'show',]);
+
+    Route::apiResource('/transactions', TransactionController::class)->only(['store', 'show']);
+
+    Route::apiResource('/payments', PaymentController::class)->only(['store', 'show']);
+
     Route::apiResource('/carts', CartController::class);
 
     Route::middleware(['role:admin'])->group(function () {
 
         Route::apiResource('/books', BookController::class)->only(['store', 'update', 'destroy']);
+
         Route::apiResource('/genres', GenreController::class)->only(['store', 'update', 'destroy']);
+
         Route::apiResource('/authors', AuthorController::class)->only(['store', 'update', 'destroy']);
+
         Route::apiResource('/transactions', TransactionController::class)->only(['index', 'destroy']);
+
+        Route::patch('/transactions/{transaction}', [TransactionController::class, 'update']);
+
+        Route::apiResource('/payments', PaymentController::class)->only(['update', 'destroy']);
+
         Route::apiResource('/users', UserController::class);
+
+        Route::apiResource('contacts', ContactMessageController::class)->only(['index', 'show', 'destroy']);
     });
 });

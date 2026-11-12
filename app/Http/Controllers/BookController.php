@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +25,40 @@ class BookController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Get All Book Data',
+            'data' => $books,
+        ], 200);
+    }
+
+    public function search(Request $request)
+    {
+        $validator = Validator::make($request->query(), [
+            'search' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'data' => $validator->errors(),
+            ], 422);
+        }
+
+        $like = '%'.trim($validator->validated()['search']).'%';
+        $books = Book::with('genre', 'author')
+            ->where(function (Builder $query) use ($like) {
+                $query->where('title', 'like', $like)
+                    ->orWhereHas('author', function (Builder $query) use ($like) {
+                        $query->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('genre', function (Builder $query) use ($like) {
+                        $query->where('name', 'like', $like);
+                    });
+            })
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => $books->isEmpty() ? 'Book data not found!' : 'Search Book Data',
             'data' => $books,
         ], 200);
     }
@@ -127,7 +162,7 @@ class BookController extends Controller
             $image->store('books', 'public');
 
             if ($book->cover_photo) {
-                Storage::disk('public')->delete('books/' . $book->cover_photo);
+                Storage::disk('public')->delete('books/'.$book->cover_photo);
             }
 
             $data['cover_photo'] = $image->hashName();
@@ -154,7 +189,7 @@ class BookController extends Controller
         }
 
         if ($book->cover_photo) {
-            Storage::disk('public')->delete('books/' . $book->cover_photo);
+            Storage::disk('public')->delete('books/'.$book->cover_photo);
         }
 
         $book->delete();

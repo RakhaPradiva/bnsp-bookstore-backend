@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
@@ -12,8 +13,10 @@ class Transaction extends Model
     protected $fillable = [
         'order_number',
         'customer_id',
-        'book_id',
         'total_amount',
+        'order_status',
+        'shipping_address',
+        'notes',
     ];
 
     public function user(): BelongsTo
@@ -21,8 +24,13 @@ class Transaction extends Model
         return $this->belongsTo(User::class, 'customer_id');
     }
 
-    public function book(): BelongsTo
+    public function details(): HasMany
     {
-        return $this->belongsTo(Book::class);
+        return $this->hasMany(TransactionDetail::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 }
