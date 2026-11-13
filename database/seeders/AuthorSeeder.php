@@ -16,31 +16,31 @@ class AuthorSeeder extends Seeder
 
         Author::create([
             'name' => 'Tere Liye',
-            'photo' => 'tere-liye.jpg',
+            'photo' => 'tere_liye.jpg',
             'bio' => 'Penulis Indonesia yang dikenal melalui novel-novel populer dengan tema keluarga, persahabatan, dan kehidupan.',
         ]);
 
         Author::create([
             'name' => 'Andrea Hirata',
-            'photo' => 'andrea-hirata.jpg',
+            'photo' => 'andrea_hirata.jpg',
             'bio' => 'Novelis asal Belitung yang banyak mengangkat kisah pendidikan dan kehidupan masyarakat di kampung halamannya.',
         ]);
 
         Author::create([
             'name' => 'J. S. Khairen',
-            'photo' => 'js-khairen.jpg',
+            'photo' => 'js_khairen.jpg',
             'bio' => 'Penulis Indonesia yang menulis novel dan cerita dengan gaya segar, serta kerap mengangkat kehidupan anak muda.',
         ]);
 
         Author::create([
             'name' => 'Pramoedya Ananta Toer',
-            'photo' => 'pramoedya-ananta-toer.jpg',
+            'photo' => 'pramoedya_ananta_toer.jpg',
             'bio' => 'Sastrawan Indonesia yang dikenal lewat karya-karya berlatar sejarah dan kehidupan sosial masyarakat.',
         ]);
 
         Author::Create([
             'name' => 'Dee Lestari',
-            'photo' => 'dee-lestari.jpg',
+            'photo' => 'dee_lestari.jpg',
             'bio' => 'Penulis dan musisi Indonesia yang menghasilkan karya fiksi dengan tema humanisme, kehidupan, dan pencarian jati diri.',
         ]);
     }

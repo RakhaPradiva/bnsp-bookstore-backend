@@ -38,7 +38,7 @@ class BookSeeder extends Seeder
             'description' => 'Kisah perjuangan anak-anak Belitung meraih pendidikan',
             'price' => 50000,
             'stock' => 20,
-            'cover_photo' => 'laskar-pelangi.jpg',
+            'cover_photo' => 'laskar_pelangi.jpg',
             'genre_id' => 3,
             'author_id' => 2,
         ]);
@@ -58,7 +58,7 @@ class BookSeeder extends Seeder
             'description' => 'Pengantar filsafat Stoisisme untuk kehidupan sehari-hari',
             'price' => 60000,
             'stock' => 12,
-            'cover_photo' => 'filosofi-teras.jpg',
+            'cover_photo' => 'filosofi_teras.jpg',
             'genre_id' => 2,
             'author_id' => 3,
         ]);

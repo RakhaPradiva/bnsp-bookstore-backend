@@ -54,12 +54,20 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth('api')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
         $validator = Validator::make($request->all(), [
+            'shipping_address' => 'required|string',
+            'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.book_id' => 'required|exists:books,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'shipping_address' => 'required|string',
-            'notes' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -70,64 +78,56 @@ class TransactionController extends Controller
             ], 422);
         }
 
-        $user = auth('api')->user();
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 401);
-        }
+        $data = $validator->validated();
 
-        $uniqueCode = 'ORD-' . strtoupper(uniqid());
         $totalAmount = 0;
-        $detailsData = [];
-
-        foreach ($request->items as $item) {
+        $prices = [];
+        foreach ($data['items'] as $item) {
             $book = Book::find($item['book_id']);
-
             if ($book->stock < $item['quantity']) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Not enough stock for {$book->title}!",
+                    'message' => "Insufficient stock for book: {$book->title}",
                 ], 400);
             }
-
-            $subtotal = $book->price * $item['quantity'];
-            $totalAmount += $subtotal;
-
-            $detailsData[] = [
-                'book_id' => $book->id,
-                'quantity' => $item['quantity'],
-                'price' => $book->price,
-                'subtotal' => $subtotal,
-            ];
-
-            $book->stock -= $item['quantity'];
-            $book->save();
+            $prices[$book->id] = $book->price;
+            $totalAmount += $book->price * $item['quantity'];
         }
 
         $transaction = Transaction::create([
-            'order_number' => $uniqueCode,
+            'order_number' => 'ORD-' . strtoupper(uniqid()),
             'customer_id' => $user->id,
             'total_amount' => $totalAmount,
             'order_status' => 'pending',
-            'shipping_address' => $request->shipping_address,
-            'notes' => $request->notes,
+            'shipping_address' => $data['shipping_address'],
+            'notes' => $data['notes'] ?? null,
         ]);
 
-        foreach ($detailsData as $detail) {
-            $detail['transaction_id'] = $transaction->id;
-            TransactionDetail::create($detail);
+        foreach ($data['items'] as $item) {
+            $price = $prices[$item['book_id']];
+
+            TransactionDetail::create([
+                'transaction_id' => $transaction->id,
+                'book_id' => $item['book_id'],
+                'quantity' => $item['quantity'],
+                'price' => $price,
+                'subtotal' => $price * $item['quantity'],
+            ]);
+
+            // Decrease the stock of the book
+            Book::whereKey($item['book_id'])->decrement('stock', $item['quantity']);
         }
 
-        $transaction->load('details.book');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaction created successfully!',
-            'data' => $transaction,
-        ], 201);
+        return response()->json(
+            [
+                'success' => true,
+                'message' => 'Transaction created successfully!',
+                'data' => $transaction->load('details.book'),
+            ],
+            201
+        );
     }
+
 
     public function show(string $id)
     {

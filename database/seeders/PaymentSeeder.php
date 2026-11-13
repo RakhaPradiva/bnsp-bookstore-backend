@@ -16,13 +16,13 @@ class PaymentSeeder extends Seeder
             'transaction_id' => 1,
             'payment_method' => 'bank_transfer',
             'payment_status' => 'pending',
-            'payment_proof' => 'payment_proofs/proof_001.jpg',
+            'payment_proof' => 'proof_001.jpg',
         ]);
         Payment::create([
             'transaction_id' => 2,
             'payment_method' => 'e-wallet',
             'payment_status' => 'paid',
-            'payment_proof' => 'payment_proofs/proof_002.png',
+            'payment_proof' => 'proof_002.png',
         ]);
         Payment::create([
             'transaction_id' => 3,

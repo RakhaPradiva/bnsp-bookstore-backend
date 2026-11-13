@@ -25,7 +25,7 @@ class TransactionSeeder extends Seeder
             'order_number' => 'ORD-002',
             'customer_id' => 3,
             'total_amount' => 300000.00,
-            'order_status' => 'paid',
+            'order_status' => 'pending',
             'shipping_address' => 'Jl. Thamrin No. 5, Bandung',
             'notes' => null,
         ]);
