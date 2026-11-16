@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->string('subject');
             $table->text('message');
-            $table->enum('status', ['unread', 'read', 'replied']);
             $table->timestamps();
         });
     }

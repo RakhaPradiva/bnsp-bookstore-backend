@@ -10,10 +10,23 @@ use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
+    public function index()
+    {
+        $payments = Payment::with('transaction.user', 'transaction.details.book')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => $payments->isEmpty() ? 'Payment data not found!' : 'Get All Payment Data',
+            'data' => $payments,
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'transaction_id' => 'required|exists:transactions,id',
+            'transaction_id' => 'required|integer|exists:transactions,id',
             'payment_method' => 'required|in:credit_card,bank_transfer,e-wallet,cod',
             'payment_proof' => 'required_unless:payment_method,cod|image|mimes:jpg,jpeg,png|max:2048',
         ]);
@@ -28,20 +41,27 @@ class PaymentController extends Controller
 
         $transaction = Transaction::find($request->transaction_id);
 
-        if ($transaction->customer_id !== auth('api')->id()) {
+        if (! $transaction || $transaction->customer_id !== auth('api')->id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
             ], 403);
         }
 
+        if ($transaction->payments()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment for this transaction already exists.',
+            ], 422);
+        }
+
         $paymentData = [
-            'transaction_id' => $request->transaction_id,
+            'transaction_id' => $transaction->id,
             'payment_method' => $request->payment_method,
             'payment_status' => 'pending',
         ];
 
-        if ($request->payment_method !== 'cod' && $request->hasFile('payment_proof')) {
+        if ($request->payment_method !== 'cod') {
             $image = $request->file('payment_proof');
             $image->store('payment_proofs', 'public');
             $paymentData['payment_proof'] = $image->hashName();
@@ -60,7 +80,7 @@ class PaymentController extends Controller
     {
         $payment = Payment::with('transaction.user', 'transaction.details.book')->find($id);
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment not found!',
@@ -68,7 +88,7 @@ class PaymentController extends Controller
         }
 
         $user = auth('api')->user();
-        if ($payment->transaction->customer_id !== $user->id) {
+        if ($payment->transaction->customer_id !== $user->id && $user->role !== 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
@@ -86,7 +106,7 @@ class PaymentController extends Controller
     {
         $payment = Payment::find($id);
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment not found!',
@@ -112,7 +132,7 @@ class PaymentController extends Controller
 
         if ($request->hasFile('payment_proof')) {
             if ($payment->payment_proof) {
-                Storage::disk('public')->delete('payment_proofs/'.$payment->payment_proof);
+                Storage::disk('public')->delete('payment_proofs/' . $payment->payment_proof);
             }
 
             $image = $request->file('payment_proof');
@@ -122,11 +142,6 @@ class PaymentController extends Controller
 
         $payment->update($data);
         $payment->load('transaction');
-
-        $transaction = $payment->transaction;
-        if ($payment->payment_status === 'paid' && $transaction && $transaction->order_status === 'pending') {
-            $transaction->update(['order_status' => 'paid']);
-        }
 
         return response()->json([
             'success' => true,
@@ -139,7 +154,7 @@ class PaymentController extends Controller
     {
         $payment = Payment::find($id);
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payment not found!',
@@ -147,7 +162,7 @@ class PaymentController extends Controller
         }
 
         if ($payment->payment_proof) {
-            Storage::disk('public')->delete('payment_proofs/'.$payment->payment_proof);
+            Storage::disk('public')->delete('payment_proofs/' . $payment->payment_proof);
         }
 
         $payment->delete();

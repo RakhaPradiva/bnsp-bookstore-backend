@@ -29,10 +29,19 @@ class ContactMessageController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $user = auth('api')->user();
+
+        $rules = [
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
-        ]);
+        ];
+
+        if (!$user) {
+            $rules['name'] = 'required|string|max:255';
+            $rules['email'] = 'required|email|max:255';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -42,20 +51,12 @@ class ContactMessageController extends Controller
             ], 422);
         }
 
-        $user = auth('api')->user();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized',
-            ], 401);
-        }
-
         $contactMessage = ContactMessage::create([
-            'customer_id' => $user->id,
+            'customer_id' => $user?->id,
+            'name' => $user ? $user->name : $request->name,
+            'email' => $user ? $user->email : $request->email,
             'subject' => $request->subject,
             'message' => $request->message,
-            'status' => 'unread',
         ]);
 
         return response()->json([
@@ -83,39 +84,7 @@ class ContactMessageController extends Controller
         ], 200);
     }
 
-    public function update(Request $request, string $id)
-    {
-        $message = ContactMessage::find($id);
 
-        if (!$message) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Contact message not found!',
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:unread,read,replied',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'data' => $validator->errors(),
-            ], 422);
-        }
-
-        $message->update([
-            'status' => $request->status,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Contact message status updated successfully!',
-            'data' => $message,
-        ], 200);
-    }
 
     public function destroy(string $id)
     {

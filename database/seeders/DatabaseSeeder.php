@@ -20,9 +20,10 @@ class DatabaseSeeder extends Seeder
             AuthorSeeder::class,
             BookSeeder::class,
             UserSeeder::class,
-            TransactionSeeder::class,
-            PaymentSeeder::class,
-            CartSeeder::class,
+            // TransactionSeeder::class,
+            // TransactionDetailSeeder::class,
+            // PaymentSeeder::class,
+            // CartSeeder::class,
             ContactMessageSeeder::class,
         ]);
     }

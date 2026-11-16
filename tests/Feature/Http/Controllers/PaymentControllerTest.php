@@ -1,10 +1,12 @@
 <?php
 
+use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 uses(RefreshDatabase::class);
 
@@ -88,5 +90,36 @@ test('bank transfer accepts a valid proof image', function () {
     $this->assertDatabaseHas('payments', [
         'transaction_id' => $transaction->id,
         'payment_method' => 'bank_transfer',
+    ]);
+});
+
+test('marking a payment as paid marks a pending order as paid', function () {
+    $customer = User::factory()->create();
+    $admin = User::factory()->create(['role' => 'admin']);
+    $transaction = Transaction::create([
+        'order_number' => 'ORD-PAID-1',
+        'customer_id' => $customer->id,
+        'total_amount' => 25,
+        'order_status' => 'pending',
+        'shipping_address' => 'Sample address',
+    ]);
+    $payment = Payment::create([
+        'transaction_id' => $transaction->id,
+        'payment_method' => 'bank_transfer',
+        'payment_status' => 'pending',
+    ]);
+
+    $token = JWTAuth::fromUser($admin);
+
+    $this->withToken($token)
+        ->patchJson('/api/payments/'.$payment->id, [
+            'payment_status' => 'paid',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.payment_status', 'paid');
+
+    $this->assertDatabaseHas('transactions', [
+        'id' => $transaction->id,
+        'order_status' => 'paid',
     ]);
 });

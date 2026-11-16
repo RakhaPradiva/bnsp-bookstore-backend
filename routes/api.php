@@ -24,7 +24,7 @@ Route::get('/books/search', [BookController::class, 'search']);
 Route::apiResource('/books', BookController::class)->only(['index', 'show']);
 Route::apiResource('/genres', GenreController::class)->only(['index', 'show']);
 Route::apiResource('/authors', AuthorController::class)->only(['index', 'show']);
-Route::apiResource('contacts', ContactMessageController::class)->only(['store']);
+Route::apiResource('/contacts', ContactMessageController::class)->only(['store']);
 
 Route::middleware(['auth:api'])->group(function () {
 
@@ -50,10 +50,10 @@ Route::middleware(['auth:api'])->group(function () {
 
         Route::patch('/transactions/{transaction}', [TransactionController::class, 'update']);
 
-        Route::apiResource('/payments', PaymentController::class)->only(['update', 'destroy']);
+        Route::apiResource('/payments', PaymentController::class)->only(['index', 'update', 'destroy']);
 
         Route::apiResource('/users', UserController::class);
 
-        Route::apiResource('contacts', ContactMessageController::class)->only(['index', 'show', 'destroy']);
+        Route::apiResource('/contacts', ContactMessageController::class)->only(['index', 'show', 'destroy']);
     });
 });
