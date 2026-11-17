@@ -128,7 +128,6 @@ class TransactionController extends Controller
         );
     }
 
-
     public function show(string $id)
     {
         $transaction = Transaction::with('user', 'details.book', 'payments')->find($id);
@@ -181,6 +180,7 @@ class TransactionController extends Controller
 
         $data = $validator->validated();
         $orderStatus = $data['order_status'];
+        $previousOrderStatus = $transaction->order_status;
         $payment = $transaction->payments->first();
 
         if (in_array($orderStatus, ['shipped', 'delivered'], true)) {
@@ -201,6 +201,10 @@ class TransactionController extends Controller
         $transaction->update([
             'order_status' => $orderStatus,
         ]);
+
+        if ($orderStatus === 'cancelled' && $previousOrderStatus !== 'cancelled') {
+            $this->restoreStock($transaction);
+        }
 
         if ($payment) {
             $paymentStatus = $data['payment_status'] ?? null;
@@ -240,11 +244,22 @@ class TransactionController extends Controller
             ], 404);
         }
 
+        if ($transaction->order_status !== 'cancelled') {
+            $this->restoreStock($transaction);
+        }
+
         $transaction->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Transaction deleted successfully!',
         ], 200);
+    }
+
+    private function restoreStock(Transaction $transaction): void
+    {
+        foreach ($transaction->details as $detail) {
+            Book::whereKey($detail->book_id)->increment('stock', $detail->quantity);
+        }
     }
 }
